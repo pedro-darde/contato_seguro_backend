@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\IService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -9,19 +10,19 @@ use Illuminate\Http\Request;
 abstract class BaseController extends Controller implements ICrudController
 {
     private Model $model;
-    public function __construct(Model $model) {
+    private IService $service;
+    public function __construct(Model $model, IService $service) {
         $this->model = $model;
+        $this->service = $service;
     }
     public function list(Request $request): JsonResponse
     {
-        $searchField = $request->get('searchField');
-        $searchValue = $request->get('searchValue');
+        $data = $this->service->list([
+            'searchField' => $request->get('searchField'),
+            'searchValue' => $request->get('searchValue'),
+            'searchOperator' => $request->get('searchOperator')
+        ]);
 
-        if ($searchValue && $searchField) {
-            $this->model->where($searchField, $searchValue);
-        }
-
-        $data = $this->model->get()->all();
         return response()->json(['data' => $data]);
     }
 
@@ -29,7 +30,7 @@ abstract class BaseController extends Controller implements ICrudController
 
     public function delete(Model $model): JsonResponse
     {
-        $model->delete();
+        $this->service->delete($model);
         return response()->json(['message' => 'Deleted successfully']);
     }
 

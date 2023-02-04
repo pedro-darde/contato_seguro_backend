@@ -6,47 +6,38 @@ use App\Models\Company;
 use App\Models\CompanyUserEnrollment;
 use App\Models\User;
 use App\Rules\Cnpj;
+use App\Services\CompanyService;
+use App\Services\IService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Validator;
 
 class CompanyController extends BaseController
 {
+    private IService $service;
     public function __construct()
     {
-        parent::__construct(new Company());
+        $this->service = new CompanyService();
+        parent::__construct(new Company(), $this->service);
     }
 
-    private array $RULES = [
-        'name' => 'required|string',
-        'cnpj' => ['required','string','unique:company,cnpj'],
-        'address' => 'required|string',
-        'users' => 'array',
-        'users.*' => 'exists:user,id',
-        'usersToRemove' => 'array',
-        'usersToRemove.*' => 'exists:user,id',
-        'usersToAdd' => 'array',
-        'usersToAdd.*' => 'exists:user,id',
-    ];
+
     function create(Request $request): JsonResponse
     {
-        $validated = $request->validate($this->RULES);
+
         try {
             DB::beginTransaction();
-            $this->RULES['cnpj'][] = new Cnpj;
 
-            $company = new Company();
-            $company->name = $validated['name'];
-            $company->address = $validated['address'];
-            $company->cnpj = $validated['cnpj'];
-            $id = $company->save();
+            $ok = $this->service->createCompany($request->all());
 
-            if (!empty ($validated['users'])) {
-               $this->createCompanyUsers($id, $validated['rules']);
+            if (!$ok['success']) {
+                return response()->json($ok['errors'], 422);
             }
+
             DB::commit();
             return response()->json(['message' => 'Company created'], 201);
         } catch (\Throwable $e) {
@@ -62,13 +53,12 @@ class CompanyController extends BaseController
         $validated = $request->validate($this->RULES);
         try {
             DB::beginTransaction();
-            $this->RULES['cnpj'][] = new Cnpj;
-            $company->name = $validated['name'];
-            $company->address = $validated['address'];
-            $company->cnpj = $validated['cnpj'];
-            $company->save();
-            if (!empty($validated['usersToAdd'])) $this->createCompanyUsers($company->id, $validated['usersToAdd']);
-            if (!empty($validated['usersToRemove'])) $this->removeCompanyUsers($company->id, $validated['usersToRemove']);
+            $ok = $this->service->updateCompany($company, $request->all());
+
+            if (!$ok['success']) {
+                return response()->json($ok['errors'], 422);
+            }
+
             DB::commit();
             return response()->json(['message' => 'Company updated'], 201);
         } catch (\Throwable $e) {
@@ -79,22 +69,5 @@ class CompanyController extends BaseController
         }
     }
 
-    private function createCompanyUsers($idCompany, $users)
-    {
-        foreach ($users as $idUser) {
-            CompanyUserEnrollment::create([
-                'id_user' => $idUser,
-                'id_company' => $idCompany
-            ]);
-        }
-    }
 
-    private function removeCompanyUsers($idCompany, $users)
-    {
-        foreach ($users as $idUser) {
-            CompanyUserEnrollment::where('id_user', $idUser)
-                ->andWhere('id_company', $idCompany)
-                ->delete();
-        }
-    }
 }
