@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class CompanyController extends BaseController
 {
@@ -31,10 +33,11 @@ class CompanyController extends BaseController
     ];
     function create(Request $request): JsonResponse
     {
+        $validated = $request->validate($this->RULES);
         try {
             DB::beginTransaction();
             $this->RULES['cnpj'][] = new Cnpj;
-            $validated = $request->validate($this->RULES);
+
             $company = new Company();
             $company->name = $validated['name'];
             $company->address = $validated['address'];
@@ -47,6 +50,7 @@ class CompanyController extends BaseController
             DB::commit();
             return response()->json(['message' => 'Company created'], 201);
         } catch (\Throwable $e) {
+            Log::error($e->getMessage());
             DB::rollBack();
             return response()->json(['message' => 'Internal Server error'], 500);
         }
@@ -55,10 +59,10 @@ class CompanyController extends BaseController
 
     function update(Model $company, Request $request): JsonResponse
     {
+        $validated = $request->validate($this->RULES);
         try {
             DB::beginTransaction();
             $this->RULES['cnpj'][] = new Cnpj;
-            $validated = $request->validate($this->RULES);
             $company->name = $validated['name'];
             $company->address = $validated['address'];
             $company->cnpj = $validated['cnpj'];
@@ -68,6 +72,8 @@ class CompanyController extends BaseController
             DB::commit();
             return response()->json(['message' => 'Company updated'], 201);
         } catch (\Throwable $e) {
+
+            Log::error($e->getMessage());
             DB::rollBack();
             return response()->json(['message' => 'Internal Server error'], 500);
         }

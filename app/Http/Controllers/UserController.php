@@ -31,9 +31,9 @@ class UserController extends BaseController
     ];
     public function create(Request $request): JsonResponse
     {
+        $validated = $request->validate($this->RULES);
         try {
             DB::beginTransaction();
-            $validated = $request->validate($this->RULES);
             $user = new User();
             $user->name = $validated['name'];
             $user->birth_city = $validated['birthCity'];
@@ -54,10 +54,10 @@ class UserController extends BaseController
 
     public function update(Model $user, Request $request): JsonResponse
     {
+        $validated = $request->validate($this->RULES);
+
         try {
             DB::beginTransaction();
-            $validated = $request->validate($this->RULES);
-
             $user->name = $validated['name'];
             $user->birth_city = $validated['birth_city'];
             $user->birth_date = $validated['birth_date'];
