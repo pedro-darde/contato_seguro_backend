@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Rules\Cnpj;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,12 +18,13 @@ class CompanyController extends BaseController
 
     private array $RULES = [
         'name' => 'required|string',
-        'cnpj' => 'required|string|unique_on_company',
+        'cnpj' => ['required','string','unique:company,cnpj'],
         'address' => 'required|string',
         'users' => 'array'
     ];
     function create(Request $request): JsonResponse
     {
+        $this->RULES['cnpj'][] = new Cnpj;
         $validated = $request->validate($this->RULES);
         $company = new Company();
         $company->name = $validated['name'];
@@ -35,6 +37,7 @@ class CompanyController extends BaseController
 
     function update(Model $company, Request $request): JsonResponse
     {
+        $this->RULES['cnpj'][] = new Cnpj;
         $validated = $request->validate($this->RULES);
         $company->name = $validated['name'];
         $company->address = $validated['address'];
