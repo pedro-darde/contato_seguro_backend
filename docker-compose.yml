@@ -1,0 +1,31 @@
+version: "3.8"
+services:
+  php:
+    build:
+      context: .
+      target: php
+      args:
+        - APP_ENV=${APP_ENV}
+    environment:
+      - APP_ENV=${APP_ENV}
+      - CONTAINER_ROLE=app
+    working_dir: /application
+    volumes:
+      - ./:/application
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+  database:
+    image: postgres
+    container_name: contato-seguro-database
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/start-database.sql:/docker-entrypoint-initdb.d/start-database.sql
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: contato_seguro_dev
+      POSTGRES_PASSWORD: secret
+volumes:
+  db-data: ~
