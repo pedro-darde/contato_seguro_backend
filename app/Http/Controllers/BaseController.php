@@ -14,8 +14,15 @@ abstract class BaseController extends Controller implements ICrudController
     }
     public function list(Request $request): JsonResponse
     {
-        $data = $this->model->all();
-        return response()->json(['data' => $data->all()]);
+        $searchField = $request->get('searchField');
+        $searchValue = $request->get('searchValue');
+
+        if ($searchValue && $searchField) {
+            $this->model->where($searchField, $searchValue);
+        }
+
+        $data = $this->model->get()->all();
+        return response()->json(['data' => $data]);
     }
 
     abstract function create(Request $request): JsonResponse;
