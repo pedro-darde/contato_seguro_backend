@@ -21,7 +21,6 @@ services:
     container_name: contato-seguro-database
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./docker/start-database.sql:/docker-entrypoint-initdb.d/start-database.sql
     ports:
       - "5432:5432"
     environment:

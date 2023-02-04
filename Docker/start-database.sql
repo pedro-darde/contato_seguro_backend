@@ -1,1 +1,0 @@
-CREATE database if not exists contato-seguro-database;
