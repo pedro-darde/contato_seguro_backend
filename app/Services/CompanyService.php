@@ -40,9 +40,10 @@ class CompanyService implements IService
         return $companies->get()->all();
     }
 
-    public function delete(Model $model): array
+    public function delete(int $model): array
     {
-        $model->delete();
+        CompanyUserEnrollment::where("id_company", $model)->delete();
+        Company::find($model)->delete();
         return [
             'ok' => true
         ];

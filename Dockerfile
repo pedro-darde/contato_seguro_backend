@@ -5,14 +5,18 @@ RUN apt-get install -y unzip libpq-dev libcurl4-gnutls-dev
 RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-install pgsql pdo_pgsql
 
+
 WORKDIR /application
 COPY . .
+
+RUN ["chmod", "+x", "Docker/entrypoint.sh"]
 
 COPY --from=composer:2.3.5 /usr/bin/composer /usr/bin/composer
 
 ENV PORT=8000
 
-ENTRYPOINT [ "Docker/entrypoint.sh" ]
+
+ENTRYPOINT [ "sh", "/application/Docker/entrypoint.sh" ]
 
 # ==============================================================================
 #  node

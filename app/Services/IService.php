@@ -7,5 +7,5 @@ use Illuminate\Database\Eloquent\Model;
 interface IService
 {
     public function list($options): array;
-    public function delete(Model $model): array;
+    public function delete(int $model): array;
 }

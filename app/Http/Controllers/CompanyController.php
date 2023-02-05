@@ -22,11 +22,11 @@ class CompanyController extends BaseController
     public function __construct()
     {
         $this->service = new CompanyService();
-        parent::__construct(new Company(), $this->service);
+        parent::__construct($this->service);
     }
 
 
-    function create(Request $request): JsonResponse
+    public function create(Request $request): JsonResponse
     {
 
         try {
@@ -48,11 +48,12 @@ class CompanyController extends BaseController
 
     }
 
-    function update(Model $company, Request $request): JsonResponse
+    function update(int $idCompany, Request $request): JsonResponse
     {
         $validated = $request->validate($this->RULES);
         try {
             DB::beginTransaction();
+            $company = Company::find($idCompany);
             $ok = $this->service->updateCompany($company, $request->all());
 
             if (!$ok['success']) {

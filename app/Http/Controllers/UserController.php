@@ -16,7 +16,7 @@ class UserController extends BaseController
     public function __construct()
     {
         $this->service = new UserService();
-        parent::__construct(new User(), $this->service);
+        parent::__construct($this->service);
     }
 
     public function create(Request $request): JsonResponse
@@ -39,10 +39,11 @@ class UserController extends BaseController
 
     }
 
-    public function update(Model $user, Request $request): JsonResponse
+    public function update(int $idUser, Request $request): JsonResponse
     {
         try {
             DB::beginTransaction();
+            $user = User::find($idUser);
             $ok = $this->service->updateUser($user, $request->all());
             if (!$ok['success']) {
                 return response()->json($ok['errors'], 422);

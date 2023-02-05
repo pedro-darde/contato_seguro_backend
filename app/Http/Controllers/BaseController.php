@@ -9,10 +9,8 @@ use Illuminate\Http\Request;
 
 abstract class BaseController extends Controller implements ICrudController
 {
-    private Model $model;
     private IService $service;
-    public function __construct(Model $model, IService $service) {
-        $this->model = $model;
+    public function __construct(IService $service) {
         $this->service = $service;
     }
     public function list(Request $request): JsonResponse
@@ -28,11 +26,11 @@ abstract class BaseController extends Controller implements ICrudController
 
     abstract function create(Request $request): JsonResponse;
 
-    public function delete(Model $model): JsonResponse
+    public function delete(int $id): JsonResponse
     {
-        $this->service->delete($model);
+        $this->service->delete($id);
         return response()->json(['message' => 'Deleted successfully']);
     }
 
-    abstract function update(Model $model, Request $request): JsonResponse;
+    abstract function update(int $id, Request $request): JsonResponse;
 }

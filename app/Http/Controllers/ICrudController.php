@@ -10,6 +10,6 @@ interface ICrudController
 {
     public function list(Request $request): JsonResponse;
     public function create(Request $request): JsonResponse;
-    public function delete(Model $model): JsonResponse;
-    public function update(Model $model, Request $request): JsonResponse;
+    public function delete(int $id): JsonResponse;
+    public function update(int $id, Request $request): JsonResponse;
 }

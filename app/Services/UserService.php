@@ -118,9 +118,10 @@ class UserService implements IService
         return $users->get()->all();
     }
 
-    public function delete(Model $model): array
+    public function delete(int $model): array
     {
-        $model->delete();
+        CompanyUserEnrollment::where('id_user', $model)->delete();
+        User::find($model)->delete();
         return [
             'ok' => true,
         ];
