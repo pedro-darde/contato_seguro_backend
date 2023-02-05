@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class CompanyUserEnrollment extends Model
 {
-    protected $fillable = ["id_user", "id_user"];
-    protected $table = "user_company_enrollment";
+    public const TABLE = "company_user_enrollment";
+    protected $fillable = ["id_user", "id_company"];
+    protected $table = self::TABLE;
+    public $timestamps = false;
+    protected $primaryKey = null;
+    public $incrementing = false;
 }

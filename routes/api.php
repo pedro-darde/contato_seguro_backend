@@ -16,7 +16,7 @@ Route::patch('/user/{user}', [UserController::class, 'update']);
 Route::delete('/user/{user}', [UserController::class, 'delete']);
 
 
-Route::get("/company", [CompanyController::class, 'list']);
+Route::get("/company/{searchField?searchValue?searchOperation?}", [CompanyController::class, 'list']);
 Route::post("/company", [CompanyController::class, 'create']);
 Route::patch('/company/{company}', [CompanyController::class, 'update']);
 Route::delete('/company/{company}', [CompanyController::class, 'delete']);

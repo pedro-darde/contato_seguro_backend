@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends BaseController
 {
@@ -21,22 +22,19 @@ class UserController extends BaseController
 
     public function create(Request $request): JsonResponse
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
             $ok = $this->service->createUser($request->all());
-
             if (!$ok['success']) {
                 return response()->json($ok['errors'], 422);
             }
-
             DB::commit();
             return response()->json(['message' => 'User created'], 201);
-
         } catch (\Throwable $e) {
+            Log::error($e->getMessage());
             DB::rollBack();
             return response()->json(['message' => 'Internal Server error'], 500);
         }
-
     }
 
     public function update(int $idUser, Request $request): JsonResponse

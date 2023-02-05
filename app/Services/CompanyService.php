@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\CompanyUserEnrollment;
 use App\Rules\Cnpj;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class CompanyService implements IService
@@ -13,7 +14,7 @@ class CompanyService implements IService
 
     private array $RULES = [
         'name' => 'required|string',
-        'cnpj' => ['required','string','unique:company,cnpj'],
+        'cnpj' => ['required', 'string'],
         'address' => 'required|string',
         'users' => 'array',
         'users.*' => 'exists:user,id',
@@ -28,16 +29,20 @@ class CompanyService implements IService
         @[
             'searchField' => $searchField,
             'searchValue' => $searchValue,
-            'searchOperator' => $searchOperator
+            'searchOperation' => $searchOperator
         ] = $options;
 
-        $companies = new Company();
-
         if ($searchField && $searchValue) {
-            $companies->where($searchField, $searchValue);
+            if ($searchField === 'cnpj') {
+                $searchValue = $this->mask($searchValue, "##.###.###/####-##");
+                Log::info($searchValue);
+            }
+            return Company::where($searchField, $searchValue)
+                ->get()
+                ->all();
         }
 
-        return $companies->get()->all();
+        return Company::all()->toArray();
     }
 
     public function delete(int $model): array
@@ -52,6 +57,7 @@ class CompanyService implements IService
     public function createCompany(array $data)
     {
         $this->RULES['cnpj'][] = new Cnpj;
+        $this->RULES['cnpj'][] = 'unique:company,cnpj';
 
         $validator = $this->makeValidator($data);
 
@@ -68,11 +74,12 @@ class CompanyService implements IService
         $company->name = $validated['name'];
         $company->address = $validated['address'];
         $company->cnpj = $validated['cnpj'];
-        $id = $company->save();
 
-        if (!empty ($validated['users'])) {
-            $this->createCompanyUsers($id, $validated['rules']);
+        if (!empty($validated['users'])) {
+            $company->users()->attach($validated["users"]);
         }
+
+        $company->save();
 
         return [
             'success' => true,
@@ -82,6 +89,9 @@ class CompanyService implements IService
 
     public function updateCompany(Company $company, array $data)
     {
+        if ($company->cnpj !== @$data['cnpj']) {
+            $this->RULES['cnpj'][] = 'unique:company,cnpj';
+        }
         $this->RULES['cnpj'][] = new Cnpj;
         $validator = $this->makeValidator($data);
 
@@ -110,7 +120,6 @@ class CompanyService implements IService
     private function makeValidator(array $data)
     {
         return Validator::make($data, $this->RULES);
-
     }
 
     private function createCompanyUsers($idCompany, $users)
@@ -131,5 +140,22 @@ class CompanyService implements IService
                 ->delete();
         }
     }
+    public function mask($val, $mask)
+    {
+        $maskared = '';
+        $k = 0;
+        for ($i = 0; $i <= strlen($mask) - 1; ++$i) {
+            if ($mask[$i] == '#') {
+                if (isset($val[$k])) {
+                    $maskared .= $val[$k++];
+                }
+            } else {
+                if (isset($mask[$i])) {
+                    $maskared .= $mask[$i];
+                }
+            }
+        }
 
+        return $maskared;
+    }
 }

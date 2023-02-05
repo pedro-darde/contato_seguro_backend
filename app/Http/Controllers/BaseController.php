@@ -6,6 +6,7 @@ use App\Services\IService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 abstract class BaseController extends Controller implements ICrudController
 {
@@ -15,10 +16,11 @@ abstract class BaseController extends Controller implements ICrudController
     }
     public function list(Request $request): JsonResponse
     {
+        Log::info($request->all());
         $data = $this->service->list([
             'searchField' => $request->get('searchField'),
             'searchValue' => $request->get('searchValue'),
-            'searchOperator' => $request->get('searchOperator')
+            'searchOperation' => $request->get('searchOperator')
         ]);
 
         return response()->json(['data' => $data]);

@@ -4,15 +4,14 @@ namespace App\Services;
 
 use App\Models\CompanyUserEnrollment;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\MessageBag;
 
 class UserService implements IService
 {
     private array $RULES = [
         'name' => 'required|string',
-        'email' => 'required|string|email|unique_on_user',
+        'email' => 'required|string|email',
         'cellphone' => 'required|string',
         'birthCity' => 'required|string',
         'birthDate' => 'required|date',
@@ -26,6 +25,7 @@ class UserService implements IService
 
     public function createUser(array $data)
     {
+        $this->RULES['email'] .= "|unique:user,email";
         $validator = $this->makeValidator($data);
         if ($validator->fails()) {
             return [
@@ -41,8 +41,8 @@ class UserService implements IService
         $user->birth_date = $validated['birthDate'];
         $user->email = $validated['email'];
         $user->cellphone = $validated['cellphone'];
-        $id = $user->save();
-        if (!empty ($validated['companies'])) $this->createUserCompanies($id, $validated['companies']);
+        if (!empty ($validated['companies'])) $user->companies()->attach($validated['companies']);
+        $user->save();
 
         return [
             'success' => true,
@@ -51,6 +51,10 @@ class UserService implements IService
     }
 
     public function updateUser(User $user, array $data) {
+        if ($user->email !== $data['email']) {
+            $this->RULES['email'] .= "|unique:user,email";
+        }
+
         $validator = $this->makeValidator($data);
         if ($validator->fails()) {
             return [
@@ -66,7 +70,7 @@ class UserService implements IService
         $user->cellphone = $validated['cellphone'];
         $user->save();
 
-        if ($validated['companiesToAdd']) $this->createUserCompanies($user->id, $validated['companiesToAdd']);
+        if ($validated['companiesToAdd']) $this->createUserCompanies($user, $validated['companiesToAdd']);
         if ($validated['companiesToRemove']) $this->removeUserCompanies($user->id, $validated['companiesToRemove']);
 
         return [
@@ -82,13 +86,13 @@ class UserService implements IService
 
     }
 
-    private function createUserCompanies($idUser, $companies)
+    private function createUserCompanies($user, $companies)
     {
         foreach ($companies as $idCompany) {
-            CompanyUserEnrollment::create([
-                'id_user' => $idUser,
+            $user->companies()->save(new CompanyUserEnrollment([
+                'id_user' => $user->id,
                 'id_company' => $idCompany
-            ]);
+            ]));
         }
     }
 

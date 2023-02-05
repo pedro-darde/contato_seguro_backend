@@ -3,18 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use App\Models\CompanyUserEnrollment;
-use App\Models\User;
-use App\Rules\Cnpj;
 use App\Services\CompanyService;
 use App\Services\IService;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Validation\Validator;
 
 class CompanyController extends BaseController
 {
@@ -50,7 +44,6 @@ class CompanyController extends BaseController
 
     function update(int $idCompany, Request $request): JsonResponse
     {
-        $validated = $request->validate($this->RULES);
         try {
             DB::beginTransaction();
             $company = Company::find($idCompany);
