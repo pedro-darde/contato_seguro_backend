@@ -15,10 +15,4 @@ class User extends Model
     {
         return $this->belongsToMany(Company::class, CompanyUserEnrollment::TABLE, "id_user", "id_company");
     }
-
-    static function withNoCompany()
-    {
-        $idsUser = CompanyUserEnrollment::all()->pluck("id_user")->all();
-        return self::whereNotIn("id", $idsUser)->get()->all();
-    }
 }

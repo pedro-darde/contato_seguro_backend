@@ -18,10 +18,6 @@ class CompanyService implements IService
         'address' => 'required|string',
         'users' => 'array',
         'users.*' => 'exists:user,id',
-        'usersToRemove' => 'array',
-        'usersToRemove.*' => 'exists:user,id',
-        'usersToAdd' => 'array',
-        'usersToAdd.*' => 'exists:user,id',
     ];
 
     public function list($options): array
@@ -37,18 +33,20 @@ class CompanyService implements IService
                 $searchValue = $this->mask($searchValue, "##.###.###/####-##");
                 Log::info($searchValue);
             }
-            return Company::where($searchField, $searchValue)
+            return Company::with(['users'])
+                ->where($searchField, $searchValue)
                 ->get()
                 ->all();
         }
 
-        return Company::all()->toArray();
+        return Company::with(['users'])->get()->all();
     }
 
     public function delete(int $model): array
     {
-        CompanyUserEnrollment::where("id_company", $model)->delete();
-        Company::find($model)->delete();
+        $company = Company::find($model);
+        $company->users()->sync([]);
+        $company->delete();
         return [
             'ok' => true
         ];
@@ -70,16 +68,15 @@ class CompanyService implements IService
 
         $validated = $validator->validated();
 
-        $company = new Company();
-        $company->name = $validated['name'];
-        $company->address = $validated['address'];
-        $company->cnpj = $validated['cnpj'];
+        $company = Company::create([
+            'name' => $validated['name'],
+            'address' => $validated['address'],
+            'cnpj' => $validated['cnpj']
+        ]);
 
         if (!empty($validated['users'])) {
             $company->users()->attach($validated["users"]);
         }
-
-        $company->save();
 
         return [
             'success' => true,
@@ -108,8 +105,7 @@ class CompanyService implements IService
         $company->address = $validated['address'];
         $company->cnpj = $validated['cnpj'];
         $company->save();
-        if (!empty($validated['usersToAdd'])) $this->createCompanyUsers($company->id, $validated['usersToAdd']);
-        if (!empty($validated['usersToRemove'])) $this->removeCompanyUsers($company->id, $validated['usersToRemove']);
+        $company->users()->sync($validated['users']);
 
         return [
             'success' => true,
@@ -122,24 +118,6 @@ class CompanyService implements IService
         return Validator::make($data, $this->RULES);
     }
 
-    private function createCompanyUsers($idCompany, $users)
-    {
-        foreach ($users as $idUser) {
-            CompanyUserEnrollment::create([
-                'id_user' => $idUser,
-                'id_company' => $idCompany
-            ]);
-        }
-    }
-
-    private function removeCompanyUsers($idCompany, $users)
-    {
-        foreach ($users as $idUser) {
-            CompanyUserEnrollment::where('id_user', $idUser)
-                ->andWhere('id_company', $idCompany)
-                ->delete();
-        }
-    }
     public function mask($val, $mask)
     {
         $maskared = '';

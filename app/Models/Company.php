@@ -10,6 +10,6 @@ class Company extends Model
     protected $table = 'company';
     public function users()
     {
-        return $this->belongsToMany(User::class, CompanyUserEnrollment::TABLE, "id_user", "id_company");
+        return $this->belongsToMany(User::class, CompanyUserEnrollment::TABLE, "id_company", "id_user");
     }
 }

@@ -13,14 +13,10 @@ class UserService implements IService
         'name' => 'required|string',
         'email' => 'required|string|email',
         'cellphone' => 'required|string',
-        'birthCity' => 'required|string',
-        'birthDate' => 'required|date',
+        'birth_city' => 'required|string',
+        'birth_date' => 'required|date',
         'companies' => 'array',
-        'companies.*' => 'exists:company,id',
-        'companiesToRemove' => 'array',
-        'companiesToRemove.*' => 'exists:company,id',
-        'companiesToAdd' => 'array',
-        'companiesToAdd.*' => 'exists:company,id',
+        'companies.*' => 'exists:company,id'
     ];
 
     public function createUser(array $data)
@@ -35,15 +31,15 @@ class UserService implements IService
         }
 
         $validated = $validator->validated();
-        $user = new User();
-        $user->name = $validated['name'];
-        $user->birth_city = $validated['birthCity'];
-        $user->birth_date = $validated['birthDate'];
-        $user->email = $validated['email'];
-        $user->cellphone = $validated['cellphone'];
+        $user = User::create([
+            'name' => $validated['name'],
+            'birth_city' => $validated['birth_city'],
+            'birth_date' => $validated['birth_date'],
+            'cellphone' => $validated['cellphone'],
+            'email'      => $validated['email'] 
+        ]);
         if (!empty ($validated['companies'])) $user->companies()->attach($validated['companies']);
-        $user->save();
-
+        
         return [
             'success' => true,
             'errors' => []
@@ -69,10 +65,7 @@ class UserService implements IService
         $user->email = $validated['email'];
         $user->cellphone = $validated['cellphone'];
         $user->save();
-
-        if ($validated['companiesToAdd']) $this->createUserCompanies($user, $validated['companiesToAdd']);
-        if ($validated['companiesToRemove']) $this->removeUserCompanies($user->id, $validated['companiesToRemove']);
-
+        $user->companies()->sync($validated['companies']);
         return [
             'success' => true,
             'errors' => []
@@ -86,51 +79,35 @@ class UserService implements IService
 
     }
 
-    private function createUserCompanies($user, $companies)
-    {
-        foreach ($companies as $idCompany) {
-            $user->companies()->save(new CompanyUserEnrollment([
-                'id_user' => $user->id,
-                'id_company' => $idCompany
-            ]));
-        }
-    }
-
-    private function removeUserCompanies($idUser, $companies)
-    {
-        foreach ($companies as $idCompany) {
-            CompanyUserEnrollment::where('id_user', $idUser)
-                ->andWhere('id_company', $idCompany)
-                ->delete();
-        }
-    }
-
     public function list($options): array
     {
         @[
             'searchField' => $searchField,
             'searchValue' => $searchValue,
-            'searchOperator' => $searchOperator,
+            'searchOperation' => $searchOperator,
             'extra' => $extra
         ] = $options;
 
-        if (!empty(@$extra['withNoCompany'])) {
-            return User::withNoCompany();
-        }
+        Log::info([$searchField, $searchValue, $searchOperator]);
 
         if ($searchField && $searchValue) {
-            return User::where($searchField,  $searchOperator, $searchValue)
+            if ($searchOperator === "ilike") $searchValue = "$searchValue%";
+
+            return User::with(['companies'])
+                        ->where($searchField,  $searchOperator, $searchValue)
                         ->get()
                         ->all();
         }
 
-        return User::all()->toArray();
+        return User::with(['companies'])->get()->all();
     }
 
     public function delete(int $model): array
     {
-        CompanyUserEnrollment::where('id_user', $model)->delete();
-        User::find($model)->delete();
+        Log::info($model);
+        $user = User::find($model);
+        $user->companies()->sync([]);
+        $user->delete();
         return [
             'ok' => true,
         ];
