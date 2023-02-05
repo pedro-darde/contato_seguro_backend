@@ -20,7 +20,8 @@ abstract class BaseController extends Controller implements ICrudController
         $data = $this->service->list([
             'searchField' => $request->get('searchField'),
             'searchValue' => $request->get('searchValue'),
-            'searchOperation' => $request->get('searchOperator')
+            'searchOperation' => $request->get('searchOperator'),
+            'extra' => $request->get("extraInfo")
         ]);
 
         return response()->json(['data' => $data]);

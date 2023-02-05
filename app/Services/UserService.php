@@ -110,16 +110,21 @@ class UserService implements IService
         @[
             'searchField' => $searchField,
             'searchValue' => $searchValue,
-            'searchOperator' => $searchOperator
+            'searchOperator' => $searchOperator,
+            'extra' => $extra
         ] = $options;
 
-        $users = new User();
-
-        if ($searchField && $searchValue) {
-            $users->where($searchField, $searchValue);
+        if (!empty(@$extra['withNoCompany'])) {
+            return User::withNoCompany();
         }
 
-        return $users->get()->all();
+        if ($searchField && $searchValue) {
+            return User::where($searchField,  $searchOperator, $searchValue)
+                        ->get()
+                        ->all();
+        }
+
+        return User::all()->toArray();
     }
 
     public function delete(int $model): array
