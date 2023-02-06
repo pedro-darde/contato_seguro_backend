@@ -15,6 +15,8 @@ Instale o projeto com:
   docker-compose up -d
 ```
 
+Aguarde alguns segundos para que seja criado o arquivo .env e as configuraçoes do Laravel.
+
 Após servir a aplicação entre dentro do container dela atraves do comando:
 
 ```bash
