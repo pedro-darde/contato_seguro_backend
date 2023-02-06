@@ -29,12 +29,11 @@ class CompanyService implements IService
         ] = $options;
 
         if ($searchField && $searchValue) {
-            if ($searchField === 'cnpj') {
-                $searchValue = $this->mask($searchValue, "##.###.###/####-##");
-                Log::info($searchValue);
-            }
+            if ($searchOperator === "ilike") $searchValue = "$searchValue%";
+
+            Log::info([$searchValue, $searchOperator, $searchField]);
             return Company::with(['users'])
-                ->where($searchField, $searchValue)
+                ->where($searchField, $searchOperator, $searchValue)
                 ->get()
                 ->all();
         }
@@ -116,24 +115,5 @@ class CompanyService implements IService
     private function makeValidator(array $data)
     {
         return Validator::make($data, $this->RULES);
-    }
-
-    public function mask($val, $mask)
-    {
-        $maskared = '';
-        $k = 0;
-        for ($i = 0; $i <= strlen($mask) - 1; ++$i) {
-            if ($mask[$i] == '#') {
-                if (isset($val[$k])) {
-                    $maskared .= $val[$k++];
-                }
-            } else {
-                if (isset($mask[$i])) {
-                    $maskared .= $mask[$i];
-                }
-            }
-        }
-
-        return $maskared;
     }
 }
